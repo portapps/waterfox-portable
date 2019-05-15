@@ -12,13 +12,15 @@
 
 ## Notice of Non-Affiliation and Disclaimer
 
-Portapps is not affiliated, associated, authorized, endorsed by, or in any way officially connected with Waterfox, or any of its subsidiaries or its affiliates. The official Waterfox website can be found at https://www.waterfox.net/.
+Portapps is not affiliated, associated, authorized, endorsed by, or in any way officially connected with Waterfox™, or any of its subsidiaries or its affiliates.
 
-The name Waterfox® as well as related names, marks, emblems and images are registered trademarks of their respective owners.
+The official Waterfox™ website can be found at https://www.waterfox.net/.
+
+The name Waterfox™ as well as related names, marks, emblems and images are registered trademarks of their respective owners.
 
 ## About
 
-Waterfox portable app made with 🚀 [Portapps](https://portapps.io).<br />
+Waterfox™ portable app made with 🚀 [Portapps](https://portapps.io).<br />
 Documentation and downloads can be found on https://portapps.io/app/waterfox-portable/
 
 ## How can I help ?
