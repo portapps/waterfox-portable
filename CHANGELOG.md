@@ -1,5 +1,10 @@
 # Changelog
 
+## 56.2.10-3 (2019/05/18)
+
+* Waterfox 56.2.10
+* Portapps 1.24.1
+
 ## 56.2.9-1 (2019/05/04)
 
 * Initial version based on Waterfox 56.2.9
