@@ -1,5 +1,9 @@
 # Changelog
 
+## 56.2.10-4 (2019/05/18)
+
+* Extensions break on path change (Issue portapps/firefox-portable#2)
+
 ## 56.2.10-3 (2019/05/18)
 
 * Waterfox 56.2.10
