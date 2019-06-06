@@ -1,6 +1,6 @@
 # Changelog
 
-## 56.2.10-4 (2019/05/18)
+## 56.2.10-4 (2019/06/06)
 
 * Extensions break on path change (Issue portapps/firefox-portable#2)
 
