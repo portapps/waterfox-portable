@@ -21,7 +21,7 @@
     <delete dir="${tmp.path}\extract2"/>
 
     <move todir="${tmp.path}\extract2">
-      <fileset dir="${extract.path}\core">
+      <fileset dir="${extract.path}\core" defaultexcludes="no">
         <exclude name="crashreporter*"/>
         <exclude name="maintenanceservice*"/>
         <exclude name="updater*"/>
@@ -30,7 +30,7 @@
     </move>
     <delete dir="${extract.path}"/>
     <move todir="${extract.path}">
-      <fileset dir="${tmp.path}\extract2"/>
+      <fileset dir="${tmp.path}\extract2" defaultexcludes="no"/>
     </move>
   </target>
 
