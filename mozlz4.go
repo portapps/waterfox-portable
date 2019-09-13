@@ -6,13 +6,12 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/pierrec/lz4"
+	"github.com/pierrec/lz4/v3"
 	"github.com/pkg/errors"
 )
 
 const (
-	mozLz4Header     = "mozLz40\x00"
-	mozLz4DecompSize = 4
+	mozLz4Header = "mozLz40\x00"
 )
 
 func mozLz4Decompress(filename string) ([]byte, error) {
