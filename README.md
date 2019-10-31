@@ -4,7 +4,6 @@
   <a href="https://portapps.io/app/waterfox-portable/#download"><img src="https://img.shields.io/github/release/portapps/waterfox-portable.svg?style=flat-square" alt="GitHub release"></a>
   <a href="https://portapps.io/app/waterfox-portable/#download"><img src="https://img.shields.io/github/downloads/portapps/waterfox-portable/total.svg?style=flat-square" alt="Total downloads"></a>
   <a href="https://travis-ci.com/portapps/waterfox-portable"><img src="https://img.shields.io/travis/com/portapps/waterfox-portable/master.svg?style=flat-square" alt="Build Status"></a>
-  <a href="https://github.com/portapps/portapps"><img src="https://img.shields.io/badge/portapps-1.26.1-479fdb.svg?style=flat-square" alt="Portapps version"></a>
   <a href="https://goreportcard.com/report/github.com/portapps/waterfox-portable"><img src="https://goreportcard.com/badge/github.com/portapps/waterfox-portable?style=flat-square" alt="Go Report"></a>
   <a href="https://www.codacy.com/app/portapps/waterfox-portable"><img src="https://img.shields.io/codacy/grade/f4ff55cc864e44a6b04d660944f96422.svg?style=flat-square" alt="Code Quality"></a>
   <br /><a href="https://www.patreon.com/crazymax"><img src="https://img.shields.io/badge/donate-patreon-f96854.svg?logo=patreon&style=flat-square" alt="Support me on Patreon"></a>
