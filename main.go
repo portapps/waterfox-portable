@@ -14,7 +14,6 @@ import (
 	"strings"
 
 	"github.com/Jeffail/gabs"
-	_ "github.com/kevinburke/go-bindata"
 	"github.com/pkg/errors"
 	. "github.com/portapps/portapps"
 	"github.com/portapps/portapps/pkg/dialog"
