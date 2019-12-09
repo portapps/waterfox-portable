@@ -1,5 +1,10 @@
 # Changelog
 
+## 2019.12-9 (2019/12/09)
+
+* Waterfox Classic 2019.12
+* Portapps 1.30.1
+
 ## 56.2.14-8 (2019/09/13)
 
 * Fix addons disabled on startup (Issue #1)
