@@ -21,6 +21,8 @@ github.com/josephspurrier/goversioninfo v0.0.0-20190209210621-63e6d1acd3dd h1:Ki
 github.com/josephspurrier/goversioninfo v0.0.0-20190209210621-63e6d1acd3dd/go.mod h1:eJTEwMjXb7kZ633hO3Ln9mBUCOjX2+FlTljvpl9SYdE=
 github.com/kevinburke/go-bindata v3.16.0+incompatible h1:TFzFZop2KxGhqNwsyjgmIh5JOrpG940MZlm5gNbxr8g=
 github.com/kevinburke/go-bindata v3.16.0+incompatible/go.mod h1:/pEEZ72flUW2p0yi30bslSp9YqD9pysLxunQDdb2CPM=
+github.com/kevinburke/go-bindata v3.17.0+incompatible h1:eXG58bFD2FVMYilP6PfjjSwKy4YTHmifsI8TURmlVVg=
+github.com/kevinburke/go-bindata v3.17.0+incompatible/go.mod h1:/pEEZ72flUW2p0yi30bslSp9YqD9pysLxunQDdb2CPM=
 github.com/kr/pretty v0.1.0 h1:L/CwN0zerZDmRFUapSPitk6f+Q3+0za1rQkzVuMiMFI=
 github.com/kr/pretty v0.1.0/go.mod h1:dAy3ld7l9f0ibDNOQOHHMYYIIbhfbHSm3C4ZsoJORNo=
 github.com/kr/pty v1.1.1/go.mod h1:pFQYn66WHrOpPYNljwOMqo10TkYh1fy3cYio2l3bCsQ=
