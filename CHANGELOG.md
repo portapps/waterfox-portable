@@ -1,5 +1,9 @@
 # Changelog
 
+## 2020.03.1-11 (2020/03/29)
+
+* Waterfox Classic 2020.03.1
+
 ## 2020.01-10 (2020/01/20)
 
 * Waterfox Classic 2020.01
