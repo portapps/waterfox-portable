@@ -15,11 +15,12 @@ import (
 
 	"github.com/Jeffail/gabs"
 	"github.com/pkg/errors"
-	. "github.com/portapps/portapps"
-	"github.com/portapps/portapps/pkg/dialog"
-	"github.com/portapps/portapps/pkg/mutex"
-	"github.com/portapps/portapps/pkg/shortcut"
-	"github.com/portapps/portapps/pkg/utl"
+	"github.com/portapps/portapps/v2"
+	"github.com/portapps/portapps/v2/pkg/dialog"
+	"github.com/portapps/portapps/v2/pkg/log"
+	"github.com/portapps/portapps/v2/pkg/mutex"
+	"github.com/portapps/portapps/v2/pkg/shortcut"
+	"github.com/portapps/portapps/v2/pkg/utl"
 	"github.com/portapps/waterfox-portable/assets"
 )
 
@@ -30,7 +31,7 @@ type config struct {
 }
 
 var (
-	app *App
+	app *portapps.App
 	cfg *config
 )
 
@@ -45,8 +46,8 @@ func init() {
 	}
 
 	// Init app
-	if app, err = NewWithCfg("waterfox-portable", "Waterfox", cfg); err != nil {
-		Log.Fatal().Err(err).Msg("Cannot initialize application. See log file for more info.")
+	if app, err = portapps.NewWithCfg("waterfox-portable", "Waterfox", cfg); err != nil {
+		log.Fatal().Err(err).Msg("Cannot initialize application. See log file for more info.")
 	}
 }
 
@@ -62,7 +63,7 @@ func main() {
 
 	// Multiple instances
 	if cfg.MultipleInstances {
-		Log.Info().Msg("Multiple instances enabled")
+		log.Info().Msg("Multiple instances enabled")
 		app.Args = append(app.Args, "--no-remote")
 	}
 
@@ -72,7 +73,7 @@ func main() {
 	if err := utl.CreateFile(autoconfig, `//
 pref("general.config.filename", "portapps.cfg");
 pref("general.config.obscure_value", 0);`); err != nil {
-		Log.Fatal().Err(err).Msg("Cannot write autoconfig.js")
+		log.Fatal().Err(err).Msg("Cannot write autoconfig.js")
 	}
 
 	// Mozilla cfg
@@ -106,12 +107,12 @@ lockPref("datareporting.policy.dataSubmissionEnabled", @TELEMETRY@);
 // Disable crash reporter
 lockPref("toolkit.crashreporter.enabled", false);
 `, "@TELEMETRY@", strconv.FormatBool(!cfg.DisableTelemetry), -1)); err != nil {
-		Log.Fatal().Err(err).Msg("Cannot write portapps.cfg")
+		log.Fatal().Err(err).Msg("Cannot write portapps.cfg")
 	}
 
 	// Fix extensions path
 	if err := updateAddonStartup(profileFolder); err != nil {
-		Log.Error().Err(err).Msg("Cannot fix extensions path")
+		log.Error().Err(err).Msg("Cannot fix extensions path")
 	}
 
 	// Set env vars
@@ -131,16 +132,16 @@ lockPref("toolkit.crashreporter.enabled", false);
 	defer mu.Release()
 	if err != nil {
 		if !cfg.MultipleInstances {
-			Log.Error().Msg("You have to enable multiple instances in your configuration if you want to launch another instance")
+			log.Error().Msg("You have to enable multiple instances in your configuration if you want to launch another instance")
 			if _, err = dialog.MsgBox(
 				fmt.Sprintf("%s portable", app.Name),
 				"Other instance detected. You have to enable multiple instances in your configuration if you want to launch another instance.",
 				dialog.MsgBoxBtnOk|dialog.MsgBoxIconError); err != nil {
-				Log.Error().Err(err).Msg("Cannot create dialog box")
+				log.Error().Err(err).Msg("Cannot create dialog box")
 			}
 			return
 		} else {
-			Log.Warn().Msg("Another instance is already running")
+			log.Warn().Msg("Another instance is already running")
 		}
 	}
 
@@ -148,11 +149,11 @@ lockPref("toolkit.crashreporter.enabled", false);
 	shortcutPath := path.Join(os.Getenv("APPDATA"), "Microsoft", "Windows", "Start Menu", "Programs", "Waterfox Portable.lnk")
 	defaultShortcut, err := assets.Asset("Waterfox.lnk")
 	if err != nil {
-		Log.Error().Err(err).Msg("Cannot load asset Waterfox.lnk")
+		log.Error().Err(err).Msg("Cannot load asset Waterfox.lnk")
 	}
 	err = ioutil.WriteFile(shortcutPath, defaultShortcut, 0644)
 	if err != nil {
-		Log.Error().Err(err).Msg("Cannot write default shortcut")
+		log.Error().Err(err).Msg("Cannot write default shortcut")
 	}
 
 	// Update default shortcut
@@ -165,11 +166,11 @@ lockPref("toolkit.crashreporter.enabled", false);
 		WorkingDirectory: shortcut.Property{Value: app.AppPath},
 	})
 	if err != nil {
-		Log.Error().Err(err).Msg("Cannot create shortcut")
+		log.Error().Err(err).Msg("Cannot create shortcut")
 	}
 	defer func() {
 		if err := os.Remove(shortcutPath); err != nil {
-			Log.Error().Err(err).Msg("Cannot remove shortcut")
+			log.Error().Err(err).Msg("Cannot remove shortcut")
 		}
 	}()
 
@@ -201,7 +202,7 @@ func updateAddonStartup(profileFolder string) error {
 	if err := updateAddons("app-system-defaults", utl.PathJoin(app.AppPath, "browser", "features"), jsonAs); err != nil {
 		return err
 	}
-	Log.Debug().Msgf("Updated addonStartup.json: %s", jsonAs.String())
+	log.Debug().Msgf("Updated addonStartup.json: %s", jsonAs.String())
 
 	encAsLz4, err := mozLz4Compress(jsonAs.Bytes())
 	if err != nil {
