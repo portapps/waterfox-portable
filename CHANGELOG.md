@@ -1,5 +1,10 @@
 # Changelog
 
+## 2020.04-12 (2020/04/21)
+
+* Waterfox Classic 2020.04
+* Portapps 2.1.2
+
 ## 2020.03.1-11 (2020/03/29)
 
 * Waterfox Classic 2020.03.1
