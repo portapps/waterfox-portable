@@ -1,5 +1,10 @@
 # Changelog
 
+## 2020.05-14 (2020/05/29)
+
+* Fix addons startup (portapps/phyrox-portable#3) 
+* Portapps 2.4.4
+
 ## 2020.05-13 (2020/05/22)
 
 * Waterfox Classic 2020.05
