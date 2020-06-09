@@ -1,5 +1,9 @@
 # Changelog
 
+## 2020.05-15 (2020/06/09)
+
+* Add `cleanup` config (#23)
+
 ## 2020.05-14 (2020/05/29)
 
 * Fix addons startup (portapps/phyrox-portable#3) 

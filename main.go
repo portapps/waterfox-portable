@@ -25,6 +25,7 @@ type config struct {
 	Profile           string `yaml:"profile" mapstructure:"profile"`
 	MultipleInstances bool   `yaml:"multiple_instances" mapstructure:"multiple_instances"`
 	DisableTelemetry  bool   `yaml:"disable_telemetry" mapstructure:"disable_telemetry"`
+	Cleanup           bool   `yaml:"cleanup" mapstructure:"cleanup"`
 }
 
 var (
@@ -40,6 +41,7 @@ func init() {
 		Profile:           "default",
 		MultipleInstances: false,
 		DisableTelemetry:  false,
+		Cleanup:           false,
 	}
 
 	// Init app
@@ -86,6 +88,16 @@ func main() {
 		} else {
 			log.Warn().Msg("Another instance is already running")
 		}
+	}
+
+	// Cleanup on exit
+	if cfg.Cleanup {
+		defer func() {
+			utl.Cleanup([]string{
+				path.Join(os.Getenv("APPDATA"), "Waterfox"),
+				path.Join(os.Getenv("LOCALAPPDATA"), "Waterfox"),
+			})
+		}()
 	}
 
 	// Multiple instances
