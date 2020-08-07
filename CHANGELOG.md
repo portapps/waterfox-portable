@@ -1,5 +1,10 @@
 # Changelog
 
+## 2020.07.1-16 (2020/08/07)
+
+* Waterfox Classic 2020.07.1
+* Portapps 2.5.0
+
 ## 2020.05-15 (2020/06/09)
 
 * Add `cleanup` config (#23)
