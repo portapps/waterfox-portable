@@ -1,5 +1,9 @@
 # Changelog
 
+## 2020.08.1-18 (2020/09/14)
+
+* Waterfox Classic 2020.08.1
+
 ## 2020.07.2-17 (2020/08/27)
 
 * Waterfox Classic 2020.07.2
