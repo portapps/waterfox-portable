@@ -12,12 +12,12 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/portapps/portapps/v2"
-	"github.com/portapps/portapps/v2/pkg/dialog"
-	"github.com/portapps/portapps/v2/pkg/log"
-	"github.com/portapps/portapps/v2/pkg/mutex"
-	"github.com/portapps/portapps/v2/pkg/shortcut"
-	"github.com/portapps/portapps/v2/pkg/utl"
+	"github.com/portapps/portapps/v3"
+	"github.com/portapps/portapps/v3/pkg/log"
+	"github.com/portapps/portapps/v3/pkg/mutex"
+	"github.com/portapps/portapps/v3/pkg/shortcut"
+	"github.com/portapps/portapps/v3/pkg/utl"
+	"github.com/portapps/portapps/v3/pkg/win"
 	"github.com/portapps/waterfox-portable/assets"
 )
 
@@ -63,25 +63,25 @@ func main() {
 	// Set env vars
 	crashreporterFolder := utl.CreateFolder(app.DataPath, "crashreporter")
 	pluginsFolder := utl.CreateFolder(app.DataPath, "plugins")
-	utl.OverrideEnv("MOZ_CRASHREPORTER", "0")
-	utl.OverrideEnv("MOZ_CRASHREPORTER_DATA_DIRECTORY", crashreporterFolder)
-	utl.OverrideEnv("MOZ_CRASHREPORTER_DISABLE", "1")
-	utl.OverrideEnv("MOZ_CRASHREPORTER_NO_REPORT", "1")
-	utl.OverrideEnv("MOZ_DATA_REPORTING", "0")
-	utl.OverrideEnv("MOZ_MAINTENANCE_SERVICE", "0")
-	utl.OverrideEnv("MOZ_PLUGIN_PATH", pluginsFolder)
-	utl.OverrideEnv("MOZ_UPDATER", "0")
+	os.Setenv("MOZ_CRASHREPORTER", "0")
+	os.Setenv("MOZ_CRASHREPORTER_DATA_DIRECTORY", crashreporterFolder)
+	os.Setenv("MOZ_CRASHREPORTER_DISABLE", "1")
+	os.Setenv("MOZ_CRASHREPORTER_NO_REPORT", "1")
+	os.Setenv("MOZ_DATA_REPORTING", "0")
+	os.Setenv("MOZ_MAINTENANCE_SERVICE", "0")
+	os.Setenv("MOZ_PLUGIN_PATH", pluginsFolder)
+	os.Setenv("MOZ_UPDATER", "0")
 
 	// Create and check mutex
-	mu, err := mutex.New(app.ID)
-	defer mu.Release()
+	mu, err := mutex.Create(app.ID)
+	defer mutex.Release(mu)
 	if err != nil {
 		if !cfg.MultipleInstances {
 			log.Error().Msg("You have to enable multiple instances in your configuration if you want to launch another instance")
-			if _, err = dialog.MsgBox(
+			if _, err = win.MsgBox(
 				fmt.Sprintf("%s portable", app.Name),
 				"Other instance detected. You have to enable multiple instances in your configuration if you want to launch another instance.",
-				dialog.MsgBoxBtnOk|dialog.MsgBoxIconError); err != nil {
+				win.MsgBoxBtnOk|win.MsgBoxIconError); err != nil {
 				log.Error().Err(err).Msg("Cannot create dialog box")
 			}
 			return
