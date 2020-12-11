@@ -6,12 +6,14 @@ package main
 
 import (
 	"fmt"
+	"html/template"
 	"io/ioutil"
 	"os"
 	"path"
-	"strconv"
 	"strings"
 
+	"github.com/Jeffail/gabs"
+	"github.com/pkg/errors"
 	"github.com/portapps/portapps/v3"
 	"github.com/portapps/portapps/v3/pkg/log"
 	"github.com/portapps/portapps/v3/pkg/mutex"
@@ -24,7 +26,6 @@ import (
 type config struct {
 	Profile           string `yaml:"profile" mapstructure:"profile"`
 	MultipleInstances bool   `yaml:"multiple_instances" mapstructure:"multiple_instances"`
-	DisableTelemetry  bool   `yaml:"disable_telemetry" mapstructure:"disable_telemetry"`
 	Cleanup           bool   `yaml:"cleanup" mapstructure:"cleanup"`
 }
 
@@ -40,7 +41,6 @@ func init() {
 	cfg = &config{
 		Profile:           "default",
 		MultipleInstances: false,
-		DisableTelemetry:  false,
 		Cleanup:           false,
 	}
 
@@ -106,6 +106,11 @@ func main() {
 		app.Args = append(app.Args, "--no-remote")
 	}
 
+	// Policies
+	if err := createPolicies(); err != nil {
+		log.Fatal().Err(err).Msg("Cannot create policies")
+	}
+
 	// Autoconfig
 	prefFolder := utl.CreateFolder(app.AppPath, "defaults/pref")
 	autoconfig := utl.PathJoin(prefFolder, "autoconfig.js")
@@ -116,36 +121,22 @@ pref("general.config.obscure_value", 0);`); err != nil {
 	}
 
 	// Mozilla cfg
-	mozillaCfg := utl.PathJoin(app.AppPath, "portapps.cfg")
-	if err := utl.CreateFile(mozillaCfg, strings.Replace(`//
-
-// Disable updater
-lockPref("app.update.enabled", false);
-lockPref("app.update.auto", false);
-lockPref("app.update.mode", 0);
-lockPref("app.update.service.enabled", false);
-
-// Disable check default browser
-lockPref("browser.shell.checkDefaultBrowser", false);
-
-// Disable Add-ons compatibility checking
-clearPref("extensions.lastAppVersion");
+	mozillaCfgPath := utl.PathJoin(app.AppPath, "portapps.cfg")
+	mozillaCfgFile, err := os.Create(mozillaCfgPath)
+	if err != nil {
+		log.Fatal().Err(err).Msg("Cannot create portapps.cfg")
+	}
+	mozillaCfgTpl := template.Must(template.New("mozillaCfg").Parse(`// Extensions scopes
+lockPref("extensions.enabledScopes", 4);
+lockPref("extensions.autoDisableScopes", 3);
 
 // Don't show 'know your rights' on first run
 pref("browser.rights.3.shown", true);
 
 // Don't show WhatsNew on first run after every update
-pref("browser.startup.homepage_override.mstone","ignore");
-
-// Disable health reporter
-lockPref("datareporting.healthreport.service.enabled", @TELEMETRY@);
-
-// Disable all data upload (Telemetry and FHR)
-lockPref("datareporting.policy.dataSubmissionEnabled", @TELEMETRY@);
-
-// Disable crash reporter
-lockPref("toolkit.crashreporter.enabled", false);
-`, "@TELEMETRY@", strconv.FormatBool(!cfg.DisableTelemetry), -1)); err != nil {
+pref("browser.startup.homepage_override.mstone", "ignore");
+`))
+	if err := mozillaCfgTpl.Execute(mozillaCfgFile, ""); err != nil {
 		log.Fatal().Err(err).Msg("Cannot write portapps.cfg")
 	}
 
@@ -185,6 +176,49 @@ lockPref("toolkit.crashreporter.enabled", false);
 
 	defer app.Close()
 	app.Launch(os.Args[1:])
+}
+
+func createPolicies() error {
+	appFile := utl.PathJoin(utl.CreateFolder(app.AppPath, "distribution"), "policies.json")
+	dataFile := utl.PathJoin(app.DataPath, "policies.json")
+	defaultPolicies := struct {
+		Policies map[string]interface{} `json:"policies"`
+	}{
+		Policies: map[string]interface{}{
+			"DisableAppUpdate":        true,
+			"DontCheckDefaultBrowser": true,
+		},
+	}
+
+	jsonPolicies, err := gabs.Consume(defaultPolicies)
+	if err != nil {
+		return errors.Wrap(err, "Cannot consume default policies")
+	}
+	log.Debug().Msgf("Default policies: %s", jsonPolicies.String())
+
+	if utl.Exists(dataFile) {
+		rawCustomPolicies, err := ioutil.ReadFile(dataFile)
+		if err != nil {
+			return errors.Wrap(err, "Cannot read custom policies")
+		}
+
+		jsonPolicies, err = gabs.ParseJSON(rawCustomPolicies)
+		if err != nil {
+			return errors.Wrap(err, "Cannot consume custom policies")
+		}
+		log.Debug().Msgf("Custom policies: %s", jsonPolicies.String())
+
+		jsonPolicies.Set(true, "policies", "DisableAppUpdate")
+		jsonPolicies.Set(true, "policies", "DontCheckDefaultBrowser")
+	}
+
+	log.Debug().Msgf("Applied policies: %s", jsonPolicies.String())
+	err = ioutil.WriteFile(appFile, []byte(jsonPolicies.StringIndent("", "  ")), 0644)
+	if err != nil {
+		return errors.Wrap(err, "Cannot write policies")
+	}
+
+	return nil
 }
 
 func updateAddonStartup(profileFolder string) error {
