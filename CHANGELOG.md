@@ -1,5 +1,15 @@
 # Changelog
 
+## 2021.01.1-20 (2021/01/28)
+
+* Waterfox Classic 2021.01.1
+* Portapps 3.1.0
+
+## 3.0.1-19 (2020/12/12)
+
+* Waterfox 3.0.1
+* Portapps 3.0.3
+
 ## 2020.08.1-18 (2020/09/14)
 
 * Waterfox Classic 2020.08.1
@@ -20,7 +30,7 @@
 
 ## 2020.05-14 (2020/05/29)
 
-* Fix addons startup (portapps/phyrox-portable#3) 
+* Fix addons startup (portapps/phyrox-portable#3)
 * Portapps 2.4.4
 
 ## 2020.05-13 (2020/05/22)
