@@ -5,7 +5,6 @@
   <a href="https://portapps.io/app/waterfox-portable/#download"><img src="https://img.shields.io/github/downloads/portapps/waterfox-portable/total.svg?style=flat-square" alt="Total downloads"></a>
   <a href="https://github.com/portapps/waterfox-portable/actions?workflow=build"><img src="https://img.shields.io/github/workflow/status/portapps/waterfox-portable/build?label=build&logo=github&style=flat-square" alt="Build Status"></a>
   <a href="https://goreportcard.com/report/github.com/portapps/waterfox-portable"><img src="https://goreportcard.com/badge/github.com/portapps/waterfox-portable?style=flat-square" alt="Go Report"></a>
-  <a href="https://app.codacy.com/gh/portapps/waterfox-portable"><img src="https://img.shields.io/codacy/grade/f4ff55cc864e44a6b04d660944f96422.svg?style=flat-square" alt="Code Quality"></a>
   <br /><a href="https://github.com/sponsors/crazy-max"><img src="https://img.shields.io/badge/sponsor-crazy--max-181717.svg?logo=github&style=flat-square" alt="Become a sponsor"></a>
   <a href="https://www.paypal.me/crazyws"><img src="https://img.shields.io/badge/donate-paypal-00457c.svg?logo=paypal&style=flat-square" alt="Donate Paypal"></a>
 </p>
