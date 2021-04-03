@@ -15,6 +15,7 @@ import (
 	"github.com/portapps/portapps/v3"
 	"github.com/portapps/portapps/v3/pkg/log"
 	"github.com/portapps/portapps/v3/pkg/mutex"
+	"github.com/portapps/portapps/v3/pkg/registry"
 	"github.com/portapps/portapps/v3/pkg/shortcut"
 	"github.com/portapps/portapps/v3/pkg/utl"
 	"github.com/portapps/portapps/v3/pkg/win"
@@ -93,6 +94,15 @@ func main() {
 	// Cleanup on exit
 	if cfg.Cleanup {
 		defer func() {
+			regKey := registry.Key{
+				Key:  `HKCU\SOFTWARE\Waterfox Ltd.`,
+				Arch: "32",
+			}
+			if regKey.Exists() {
+				if err := regKey.Delete(true); err != nil {
+					log.Error().Err(err).Msg("Cannot remove registry key")
+				}
+			}
 			utl.Cleanup([]string{
 				path.Join(os.Getenv("APPDATA"), "Waterfox"),
 				path.Join(os.Getenv("LOCALAPPDATA"), "Waterfox"),

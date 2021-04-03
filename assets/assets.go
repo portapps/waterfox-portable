@@ -227,7 +227,7 @@ type bintree struct {
 }
 
 var _bintree = &bintree{nil, map[string]*bintree{
-	"Waterfox.lnk": &bintree{waterfoxLnk, map[string]*bintree{}},
+	"Waterfox.lnk": {waterfoxLnk, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.
