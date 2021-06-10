@@ -1,5 +1,15 @@
 # Changelog
 
+## 2021.02-24 (2021/06/11)
+
+* Waterfox Classic 2021.06
+
+## 2021.02-22 (2021/04/04)
+
+* Waterfox Classic 2021.02
+* Portapps 3.3.0
+* Cleanup registry keys (#51)
+
 ## 2021.01.1-20 (2021/01/28)
 
 * Waterfox Classic 2021.01.1
