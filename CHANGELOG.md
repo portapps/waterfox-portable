@@ -1,5 +1,9 @@
 # Changelog
 
+## 2021.08.1-26 (2021/09/18)
+
+* Waterfox Classic 2021.08.1
+
 ## 2021.02-24 (2021/06/11)
 
 * Waterfox Classic 2021.06
