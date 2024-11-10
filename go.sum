@@ -23,8 +23,8 @@ github.com/ilya1st/rotatewriter v0.0.0-20171126183947-3df0c1a3ed6d h1:OGuVAVny/9
 github.com/ilya1st/rotatewriter v0.0.0-20171126183947-3df0c1a3ed6d/go.mod h1:S1q6q+21PRGd0WRX+fHjQ+TOe3CgpSv7zgCWnZcbxCs=
 github.com/josephspurrier/goversioninfo v1.4.1 h1:5LvrkP+n0tg91J9yTkoVnt/QgNnrI1t4uSsWjIonrqY=
 github.com/josephspurrier/goversioninfo v1.4.1/go.mod h1:JWzv5rKQr+MmW+LvM412ToT/IkYDZjaclF2pKDss8IY=
-github.com/kevinburke/go-bindata v3.24.0+incompatible h1:qajFA3D0pH94OTLU4zcCCKCDgR+Zr2cZK/RPJHDdFoY=
-github.com/kevinburke/go-bindata v3.24.0+incompatible/go.mod h1:/pEEZ72flUW2p0yi30bslSp9YqD9pysLxunQDdb2CPM=
+github.com/kevinburke/go-bindata/v4 v4.0.2 h1:6qQI0nNTL27wM1En8zQHGBEPp3ETzgFU6hVdSjlkrfE=
+github.com/kevinburke/go-bindata/v4 v4.0.2/go.mod h1:M/CkBqw2qCZ1Ztv5JyKgocGYWyUkYlDqkqXS1ktLe5c=
 github.com/kr/pretty v0.1.0 h1:L/CwN0zerZDmRFUapSPitk6f+Q3+0za1rQkzVuMiMFI=
 github.com/kr/pretty v0.1.0/go.mod h1:dAy3ld7l9f0ibDNOQOHHMYYIIbhfbHSm3C4ZsoJORNo=
 github.com/kr/pty v1.1.1/go.mod h1:pFQYn66WHrOpPYNljwOMqo10TkYh1fy3cYio2l3bCsQ=

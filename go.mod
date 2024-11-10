@@ -4,7 +4,7 @@ go 1.23
 
 require (
 	github.com/Jeffail/gabs v1.4.0
-	github.com/kevinburke/go-bindata v3.24.0+incompatible
+	github.com/kevinburke/go-bindata/v4 v4.0.2
 	github.com/pierrec/lz4/v3 v3.3.5
 	github.com/pkg/errors v0.9.1
 	github.com/portapps/portapps/v3 v3.14.1
