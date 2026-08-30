@@ -7,18 +7,17 @@ import (
 	"fmt"
 	"html/template"
 	"os"
-	"path"
 	"path/filepath"
 	"strings"
 
 	"github.com/Jeffail/gabs"
 	"github.com/pkg/errors"
 	"github.com/portapps/portapps/v3"
+	"github.com/portapps/portapps/v3/pkg/files"
 	"github.com/portapps/portapps/v3/pkg/log"
 	"github.com/portapps/portapps/v3/pkg/mutex"
 	"github.com/portapps/portapps/v3/pkg/registry"
 	"github.com/portapps/portapps/v3/pkg/shortcut"
-	"github.com/portapps/portapps/v3/pkg/utl"
 	"github.com/portapps/portapps/v3/pkg/win"
 	"github.com/portapps/waterfox-portable/assets"
 )
@@ -51,8 +50,13 @@ func init() {
 }
 
 func main() {
-	utl.CreateFolder(app.DataPath)
-	profileFolder := utl.CreateFolder(app.DataPath, "profile", cfg.Profile)
+	if err := os.MkdirAll(app.DataPath, os.ModePerm); err != nil {
+		log.Fatal().Err(err).Msg("Cannot create data directory.")
+	}
+	profileFolder := filepath.Join(app.DataPath, "profile", cfg.Profile)
+	if err := os.MkdirAll(profileFolder, os.ModePerm); err != nil {
+		log.Fatal().Err(err).Msg("Cannot create profile directory.")
+	}
 
 	app.Process = filepath.Join(app.AppPath, "waterfox.exe")
 	app.Args = []string{
@@ -61,8 +65,14 @@ func main() {
 	}
 
 	// Set env vars
-	crashreporterFolder := utl.CreateFolder(app.DataPath, "crashreporter")
-	pluginsFolder := utl.CreateFolder(app.DataPath, "plugins")
+	crashreporterFolder := filepath.Join(app.DataPath, "crashreporter")
+	if err := os.MkdirAll(crashreporterFolder, os.ModePerm); err != nil {
+		log.Fatal().Err(err).Msg("Cannot create crash reporter directory.")
+	}
+	pluginsFolder := filepath.Join(app.DataPath, "plugins")
+	if err := os.MkdirAll(pluginsFolder, os.ModePerm); err != nil {
+		log.Fatal().Err(err).Msg("Cannot create plugins directory.")
+	}
 	os.Setenv("MOZ_CRASHREPORTER", "0")
 	os.Setenv("MOZ_CRASHREPORTER_DATA_DIRECTORY", crashreporterFolder)
 	os.Setenv("MOZ_CRASHREPORTER_DISABLE", "1")
@@ -102,10 +112,10 @@ func main() {
 					log.Error().Err(err).Msg("Cannot remove registry key")
 				}
 			}
-			utl.Cleanup([]string{
-				path.Join(os.Getenv("APPDATA"), "Waterfox"),
-				path.Join(os.Getenv("LOCALAPPDATA"), "Waterfox"),
-			})
+			files.Cleanup(
+				filepath.Join(os.Getenv("APPDATA"), "Waterfox"),
+				filepath.Join(os.Getenv("LOCALAPPDATA"), "Waterfox"),
+			)
 		}()
 	}
 
@@ -121,11 +131,14 @@ func main() {
 	}
 
 	// Autoconfig
-	prefFolder := utl.CreateFolder(app.AppPath, "defaults/pref")
+	prefFolder := filepath.Join(app.AppPath, "defaults", "pref")
+	if err := os.MkdirAll(prefFolder, os.ModePerm); err != nil {
+		log.Fatal().Err(err).Msg("Cannot create preferences directory.")
+	}
 	autoconfig := filepath.Join(prefFolder, "autoconfig.js")
-	if err := utl.CreateFile(autoconfig, `//
+	if err := os.WriteFile(autoconfig, []byte(`//
 pref("general.config.filename", "portapps.cfg");
-pref("general.config.obscure_value", 0);`); err != nil {
+pref("general.config.obscure_value", 0);`), 0644); err != nil {
 		log.Fatal().Err(err).Msg("Cannot write autoconfig.js")
 	}
 
@@ -155,7 +168,7 @@ pref("browser.startup.homepage_override.mstone", "ignore");
 	}
 
 	// Copy default shortcut
-	shortcutPath := path.Join(os.Getenv("APPDATA"), "Microsoft", "Windows", "Start Menu", "Programs", "Waterfox Portable.lnk")
+	shortcutPath := filepath.Join(files.StartMenuPath(), "Waterfox Portable.lnk")
 	defaultShortcut, err := assets.Asset("Waterfox.lnk")
 	if err != nil {
 		log.Error().Err(err).Msg("Cannot load asset Waterfox.lnk")
@@ -188,7 +201,11 @@ pref("browser.startup.homepage_override.mstone", "ignore");
 }
 
 func createPolicies() error {
-	appFile := filepath.Join(utl.CreateFolder(app.AppPath, "distribution"), "policies.json")
+	distributionFolder := filepath.Join(app.AppPath, "distribution")
+	if err := os.MkdirAll(distributionFolder, os.ModePerm); err != nil {
+		return errors.Wrap(err, "Cannot create distribution folder")
+	}
+	appFile := filepath.Join(distributionFolder, "policies.json")
 	dataFile := filepath.Join(app.DataPath, "policies.json")
 	defaultPolicies := struct {
 		Policies map[string]interface{} `json:"policies"`
@@ -205,7 +222,7 @@ func createPolicies() error {
 	}
 	log.Debug().Msgf("Default policies: %s", jsonPolicies.String())
 
-	if utl.Exists(dataFile) {
+	if _, err := os.Stat(dataFile); err == nil {
 		rawCustomPolicies, err := os.ReadFile(dataFile)
 		if err != nil {
 			return errors.Wrap(err, "Cannot read custom policies")
@@ -231,8 +248,8 @@ func createPolicies() error {
 }
 
 func updateAddonStartup(profileFolder string) error {
-	lz4File := path.Join(profileFolder, "addonStartup.json.lz4")
-	if !utl.Exists(lz4File) || app.Prev.RootPath == "" {
+	lz4File := filepath.Join(profileFolder, "addonStartup.json.lz4")
+	if _, err := os.Stat(lz4File); os.IsNotExist(err) || app.Prev.RootPath == "" {
 		return nil
 	}
 
@@ -241,12 +258,12 @@ func updateAddonStartup(profileFolder string) error {
 		return err
 	}
 
-	prevPathLin := strings.Replace(utl.FormatUnixPath(app.Prev.RootPath), ` `, `%20`, -1)
-	currPathLin := strings.Replace(utl.FormatUnixPath(app.RootPath), ` `, `%20`, -1)
+	prevPathLin := escapedUnixPath(app.Prev.RootPath)
+	currPathLin := escapedUnixPath(app.RootPath)
 	lz4Str := strings.Replace(string(lz4Raw), prevPathLin, currPathLin, -1)
 
-	prevPathWin := strings.Replace(strings.Replace(utl.FormatWindowsPath(app.Prev.RootPath), `\`, `\\`, -1), ` `, `%20`, -1)
-	currPathWin := strings.Replace(strings.Replace(utl.FormatWindowsPath(app.RootPath), `\`, `\\`, -1), ` `, `%20`, -1)
+	prevPathWin := escapedWindowsPath(app.Prev.RootPath)
+	currPathWin := escapedWindowsPath(app.RootPath)
 	lz4Str = strings.Replace(lz4Str, prevPathWin, currPathWin, -1)
 
 	lz4Enc, err := mozLz4Compress([]byte(lz4Str))
@@ -255,4 +272,12 @@ func updateAddonStartup(profileFolder string) error {
 	}
 
 	return os.WriteFile(lz4File, lz4Enc, 0644)
+}
+
+func escapedUnixPath(path string) string {
+	return strings.ReplaceAll(filepath.ToSlash(path), ` `, `%20`)
+}
+
+func escapedWindowsPath(path string) string {
+	return strings.ReplaceAll(strings.ReplaceAll(filepath.FromSlash(path), `\`, `\\`), ` `, `%20`)
 }
