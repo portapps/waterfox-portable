@@ -1,9 +1,8 @@
-//go:generate go install -v github.com/kevinburke/go-bindata/v4/go-bindata
-//go:generate go-bindata -prefix res/ -pkg assets -o assets/assets.go res/Waterfox.lnk
 //go:generate go install -v github.com/josephspurrier/goversioninfo/cmd/goversioninfo
 package main
 
 import (
+	_ "embed"
 	"fmt"
 	"html/template"
 	"os"
@@ -19,8 +18,10 @@ import (
 	"github.com/portapps/portapps/v3/pkg/registry"
 	"github.com/portapps/portapps/v3/pkg/shortcut"
 	"github.com/portapps/portapps/v3/pkg/win"
-	"github.com/portapps/waterfox-portable/assets"
 )
+
+//go:embed res/Waterfox.lnk
+var defaultShortcut []byte
 
 type config struct {
 	Profile           string `yaml:"profile" mapstructure:"profile"`
@@ -169,10 +170,6 @@ pref("browser.startup.homepage_override.mstone", "ignore");
 
 	// Copy default shortcut
 	shortcutPath := filepath.Join(files.StartMenuPath(), "Waterfox Portable.lnk")
-	defaultShortcut, err := assets.Asset("Waterfox.lnk")
-	if err != nil {
-		log.Error().Err(err).Msg("Cannot load asset Waterfox.lnk")
-	}
 	err = os.WriteFile(shortcutPath, defaultShortcut, 0644)
 	if err != nil {
 		log.Error().Err(err).Msg("Cannot write default shortcut")
