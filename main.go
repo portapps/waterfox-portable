@@ -4,13 +4,13 @@ package main
 
 import (
 	_ "embed"
+	"encoding/json"
 	"fmt"
 	"html/template"
 	"os"
 	"path/filepath"
 	"strings"
 
-	"github.com/Jeffail/gabs"
 	"github.com/pkg/errors"
 	"github.com/portapps/portapps/v3"
 	"github.com/portapps/portapps/v3/pkg/files"
@@ -25,9 +25,11 @@ import (
 var defaultShortcut []byte
 
 type config struct {
-	Profile           string `yaml:"profile" mapstructure:"profile"`
-	MultipleInstances bool   `yaml:"multiple_instances" mapstructure:"multiple_instances"`
-	Cleanup           bool   `yaml:"cleanup" mapstructure:"cleanup"`
+	Profile              string `yaml:"profile" mapstructure:"profile"`
+	MultipleInstances    bool   `yaml:"multiple_instances" mapstructure:"multiple_instances"`
+	DisableTelemetry     bool   `yaml:"disable_telemetry" mapstructure:"disable_telemetry"`
+	DisableCrashReporter bool   `yaml:"disable_crash_reporter" mapstructure:"disable_crash_reporter"`
+	Cleanup              bool   `yaml:"cleanup" mapstructure:"cleanup"`
 }
 
 var (
@@ -40,9 +42,11 @@ func init() {
 
 	// Default config
 	cfg = &config{
-		Profile:           "default",
-		MultipleInstances: false,
-		Cleanup:           false,
+		Profile:              "default",
+		MultipleInstances:    false,
+		DisableTelemetry:     false,
+		DisableCrashReporter: true,
+		Cleanup:              false,
 	}
 
 	// Init app
@@ -62,7 +66,7 @@ func main() {
 
 	app.Process = filepath.Join(app.AppPath, "waterfox.exe")
 	app.Args = []string{
-		"--profile",
+		"-profile",
 		profileFolder,
 	}
 
@@ -75,18 +79,21 @@ func main() {
 	if err := os.MkdirAll(pluginsFolder, os.ModePerm); err != nil {
 		log.Fatal().Err(err).Msg("Cannot create plugins directory.")
 	}
-	os.Setenv("MOZ_CRASHREPORTER", "0")
 	os.Setenv("MOZ_CRASHREPORTER_DATA_DIRECTORY", crashreporterFolder)
-	os.Setenv("MOZ_CRASHREPORTER_DISABLE", "1")
-	os.Setenv("MOZ_CRASHREPORTER_NO_REPORT", "1")
-	os.Setenv("MOZ_DATA_REPORTING", "0")
 	os.Setenv("MOZ_MAINTENANCE_SERVICE", "0")
 	os.Setenv("MOZ_PLUGIN_PATH", pluginsFolder)
 	os.Setenv("MOZ_UPDATER", "0")
+	if cfg.DisableCrashReporter {
+		os.Setenv("MOZ_CRASHREPORTER", "0")
+		os.Setenv("MOZ_CRASHREPORTER_DISABLE", "1")
+		os.Setenv("MOZ_CRASHREPORTER_NO_REPORT", "1")
+	}
+	if cfg.DisableTelemetry {
+		os.Setenv("MOZ_DATA_REPORTING", "0")
+	}
 
 	// Create and check mutex
 	mu, err := mutex.Create(app.ID)
-	defer mutex.Release(mu)
 	if err != nil {
 		if !cfg.MultipleInstances {
 			log.Error().Msg("You have to enable multiple instances in your configuration if you want to launch another instance")
@@ -100,6 +107,8 @@ func main() {
 		} else {
 			log.Warn().Msg("Another instance is already running")
 		}
+	} else {
+		defer mutex.Release(mu)
 	}
 
 	// Cleanup on exit
@@ -114,17 +123,21 @@ func main() {
 					log.Error().Err(err).Msg("Cannot remove registry key")
 				}
 			}
-			files.Cleanup(
-				filepath.Join(os.Getenv("APPDATA"), "Waterfox"),
-				filepath.Join(os.Getenv("LOCALAPPDATA"), "Waterfox"),
-			)
+			var paths []string
+			if appData := os.Getenv("APPDATA"); appData != "" {
+				paths = append(paths, filepath.Join(appData, "Waterfox"))
+			}
+			if localAppData := os.Getenv("LOCALAPPDATA"); localAppData != "" {
+				paths = append(paths, filepath.Join(localAppData, "Waterfox"))
+			}
+			files.Cleanup(paths...)
 		}()
 	}
 
 	// Multiple instances
 	if cfg.MultipleInstances {
 		log.Info().Msg("Multiple instances enabled")
-		app.Args = append(app.Args, "--no-remote")
+		app.Args = append(app.Args, "-no-remote")
 	}
 
 	// Policies
@@ -150,18 +163,28 @@ pref("general.config.obscure_value", 0);`), 0644); err != nil {
 	if err != nil {
 		log.Fatal().Err(err).Msg("Cannot create portapps.cfg")
 	}
-	mozillaCfgTpl := template.Must(template.New("mozillaCfg").Parse(`// Extensions scopes
-lockPref("extensions.enabledScopes", 4);
-lockPref("extensions.autoDisableScopes", 3);
+	mozillaCfgData := struct {
+		DisableCrashReporter bool
+	}{
+		cfg.DisableCrashReporter,
+	}
+	mozillaCfgTpl := template.Must(template.New("mozillaCfg").Parse(`// Portable defaults only.
 
-// Don't show 'know your rights' on first run
+// Keep first-run noise down.
 pref("browser.rights.3.shown", true);
-
-// Don't show WhatsNew on first run after every update
 pref("browser.startup.homepage_override.mstone", "ignore");
+
+{{ if .DisableCrashReporter -}}
+// Disable crash reporter
+lockPref("toolkit.crashreporter.enabled", false);
+{{ end -}}
 `))
-	if err := mozillaCfgTpl.Execute(mozillaCfgFile, ""); err != nil {
+	if err := mozillaCfgTpl.Execute(mozillaCfgFile, mozillaCfgData); err != nil {
+		mozillaCfgFile.Close()
 		log.Fatal().Err(err).Msg("Cannot write portapps.cfg")
+	}
+	if err := mozillaCfgFile.Close(); err != nil {
+		log.Fatal().Err(err).Msg("Cannot close portapps.cfg")
 	}
 
 	// Fix extensions path
@@ -205,20 +228,14 @@ func createPolicies() error {
 	}
 	appFile := filepath.Join(distributionFolder, "policies.json")
 	dataFile := filepath.Join(app.DataPath, "policies.json")
-	defaultPolicies := struct {
-		Policies map[string]interface{} `json:"policies"`
-	}{
-		Policies: map[string]interface{}{
-			"DisableAppUpdate":        true,
-			"DontCheckDefaultBrowser": true,
-		},
+	jsonPolicies := map[string]interface{}{
+		"policies": map[string]interface{}{},
 	}
-
-	jsonPolicies, err := gabs.Consume(defaultPolicies)
+	defaultPolicies, err := json.Marshal(jsonPolicies)
 	if err != nil {
-		return errors.Wrap(err, "Cannot consume default policies")
+		return errors.Wrap(err, "Cannot marshal default policies")
 	}
-	log.Debug().Msgf("Default policies: %s", jsonPolicies.String())
+	log.Debug().Msgf("Default policies: %s", string(defaultPolicies))
 
 	if _, err := os.Stat(dataFile); err == nil {
 		rawCustomPolicies, err := os.ReadFile(dataFile)
@@ -226,19 +243,40 @@ func createPolicies() error {
 			return errors.Wrap(err, "Cannot read custom policies")
 		}
 
-		jsonPolicies, err = gabs.ParseJSON(rawCustomPolicies)
-		if err != nil {
-			return errors.Wrap(err, "Cannot consume custom policies")
+		if err := json.Unmarshal(rawCustomPolicies, &jsonPolicies); err != nil {
+			return errors.Wrap(err, "Cannot parse custom policies")
 		}
-		log.Debug().Msgf("Custom policies: %s", jsonPolicies.String())
-
-		jsonPolicies.Set(true, "policies", "DisableAppUpdate")
-		jsonPolicies.Set(true, "policies", "DontCheckDefaultBrowser")
+		if jsonPolicies == nil {
+			return errors.New("Custom policies must be an object")
+		}
+		customPolicies, err := json.Marshal(jsonPolicies)
+		if err != nil {
+			return errors.Wrap(err, "Cannot marshal custom policies")
+		}
+		log.Debug().Msgf("Custom policies: %s", string(customPolicies))
 	}
 
-	log.Debug().Msgf("Applied policies: %s", jsonPolicies.String())
-	err = os.WriteFile(appFile, []byte(jsonPolicies.StringIndent("", "  ")), 0644)
+	policies, ok := jsonPolicies["policies"].(map[string]interface{})
+	if !ok {
+		if _, exists := jsonPolicies["policies"]; exists {
+			return errors.New("policies must be an object")
+		}
+		policies = map[string]interface{}{}
+		jsonPolicies["policies"] = policies
+	}
+	policies["DisableAppUpdate"] = true
+	policies["DontCheckDefaultBrowser"] = true
+	if cfg.DisableTelemetry {
+		policies["DisableFirefoxStudies"] = true
+		policies["DisableTelemetry"] = true
+	}
+
+	appliedPolicies, err := json.MarshalIndent(jsonPolicies, "", "  ")
 	if err != nil {
+		return errors.Wrap(err, "Cannot marshal policies")
+	}
+	log.Debug().Msgf("Applied policies: %s", string(appliedPolicies))
+	if err := os.WriteFile(appFile, appliedPolicies, 0644); err != nil {
 		return errors.Wrap(err, "Cannot write policies")
 	}
 
