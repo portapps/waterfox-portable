@@ -1,5 +1,12 @@
 # Changelog
 
+## 6.7.3-32 (2026/09/20)
+
+* Waterfox 6.7.3
+* Modernize portability policies and privacy controls
+* Portapps 3.19.0
+* Bump github.com/josephspurrier/goversioninfo from 1.5.0 to 1.7.0
+
 ## 6.6.7-32 (2026/01/05)
 
 * Waterfox 6.6.7
