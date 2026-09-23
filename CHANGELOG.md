@@ -1,6 +1,6 @@
 # Changelog
 
-## 6.7.3-32 (2026/09/20)
+## 6.7.3-33 (2026/09/20)
 
 * Waterfox 6.7.3
 * Modernize portability policies and privacy controls
