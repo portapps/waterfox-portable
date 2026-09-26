@@ -1,0 +1,158 @@
+name: update-app
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 9 * * *'
+  push:
+    branches:
+      - 'master'
+  pull_request:
+    paths:
+      - '.github/workflows/update-app.yml'
+      - 'build.properties'
+
+jobs:
+  update:
+    if: github.event_name != 'pull_request'
+    runs-on: windows-latest
+    environment: update-app # secrets are gated by this environment
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      -
+        name: GitHub auth token from GitHub App
+        id: write-app
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ vars.PORTAPPS_BOT_CLIENT_ID }}
+          private-key: ${{ secrets.PORTAPPS_BOT_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ github.event.repository.name }}
+          permission-contents: write
+          permission-pull-requests: write
+      -
+        name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          token: ${{ steps.write-app.outputs.token }}
+          fetch-depth: 0
+          persist-credentials: false
+      -
+        name: Update Waterfox
+        id: update
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: &update-script |
+            const fs = require('fs');
+            const path = require('path');
+
+            const { data: release } = await github.rest.repos.getLatestRelease({
+              owner: 'BrowserWorks',
+              repo: 'Waterfox'
+            });
+            const version = release.tag_name;
+            if (release.draft || release.prerelease || !/^\d+\.\d+\.\d+(?:\.\d+)?$/.test(version)) {
+              throw new Error(`Unexpected Waterfox stable release tag: ${version}`);
+            }
+
+            const relativePath = 'build.properties';
+            const filePath = path.join(process.env.GITHUB_WORKSPACE, relativePath);
+            const content = fs.readFileSync(filePath, 'utf8');
+            const versionMatch = content.match(/^app\.version[ \t]*=[ \t]*(\S+)[ \t]*$/m);
+            const releaseMatch = content.match(/^app\.release[ \t]*=[ \t]*(\d+)[ \t]*$/m);
+            if (!versionMatch || !releaseMatch) {
+              throw new Error(`Missing or invalid app.version or app.release in ${relativePath}`);
+            }
+
+            function compareVersions(left, right) {
+              const leftParts = left.split('.').map(Number);
+              const rightParts = right.split('.').map(Number);
+              for (let i = 0; i < Math.max(leftParts.length, rightParts.length); i++) {
+                const difference = (leftParts[i] || 0) - (rightParts[i] || 0);
+                if (difference !== 0) {
+                  return difference;
+                }
+              }
+              return 0;
+            }
+
+            const currentVersion = versionMatch[1];
+            if (!/^\d+\.\d+\.\d+(?:\.\d+)?$/.test(currentVersion)) {
+              throw new Error(`Invalid app.version in ${relativePath}: ${currentVersion}`);
+            }
+            if (compareVersions(version, currentVersion) <= 0) {
+              core.info(`Waterfox ${currentVersion} is already up to date`);
+            } else {
+              const installerUrl = `https://cdn1.waterfox.net/waterfox/releases/${version}/WINNT_x86_64/Waterfox%20Setup%20${version}.exe`;
+              const response = await fetch(installerUrl, { method: 'HEAD', signal: AbortSignal.timeout(30000) });
+              if (!response.ok) {
+                throw new Error(`Waterfox ${version} installer is unavailable: HTTP ${response.status} at ${installerUrl}`);
+              }
+
+              const nextRelease = Number(releaseMatch[1]) + 1;
+              if (!Number.isSafeInteger(nextRelease)) {
+                throw new Error(`Invalid app.release in ${relativePath}: ${releaseMatch[1]}`);
+              }
+              const updated = content
+                .replace(/^app\.version[ \t]*=[ \t]*\S+[ \t]*$/m, `app.version = ${version}`)
+                .replace(/^app\.release[ \t]*=[ \t]*\d+[ \t]*$/m, `app.release = ${nextRelease}`);
+              fs.writeFileSync(filePath, updated, 'utf8');
+              core.info(`Updated ${relativePath} from ${currentVersion} to ${version}`);
+            }
+
+            core.setOutput('title', `Waterfox ${version}`);
+            core.setOutput('version', version);
+      -
+        name: Create pull request
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
+        with:
+          base: ${{ github.event.repository.default_branch }}
+          branch: update-waterfox
+          token: ${{ steps.write-app.outputs.token }}
+          commit-message: ${{ steps.update.outputs.title }}
+          title: ${{ steps.update.outputs.title }}
+          signoff: true
+          sign-commits: true
+          delete-branch: true
+          body: |
+            This updates Waterfox to ${{ steps.update.outputs.version }}.
+
+  diff:
+    if: github.event_name == 'pull_request'
+    runs-on: windows-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read # same as global permissions
+    steps:
+      -
+        name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      -
+        name: Update Waterfox
+        id: update
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: *update-script
+      -
+        name: Show diff
+        shell: pwsh
+        run: |
+          $diff = git --no-pager diff -- build.properties
+          if ($diff) {
+            $diff
+          } else {
+            Write-Host "No update diff."
+          }
