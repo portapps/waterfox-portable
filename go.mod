@@ -3,7 +3,7 @@ module github.com/portapps/waterfox-portable
 go 1.26.0
 
 require (
-	github.com/pierrec/lz4/v3 v3.3.5
+	github.com/pierrec/lz4/v3 v3.3.6
 	github.com/pkg/errors v0.9.1
 	github.com/portapps/portapps/v3 v3.19.0
 )
