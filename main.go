@@ -298,6 +298,10 @@ func updateAddonStartup(profileFolder string) error {
 	currPathLin := escapedUnixPath(app.RootPath)
 	lz4Str := strings.Replace(string(lz4Raw), prevPathLin, currPathLin, -1)
 
+	if lz4Str == string(lz4Raw) {
+		return nil
+	}
+
 	prevPathWin := escapedWindowsPath(app.Prev.RootPath)
 	currPathWin := escapedWindowsPath(app.RootPath)
 	lz4Str = strings.Replace(lz4Str, prevPathWin, currPathWin, -1)
