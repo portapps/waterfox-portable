@@ -20,6 +20,8 @@ func mozLz4Decompress(filename string) ([]byte, error) {
 		return nil, err
 	}
 
+	defer file.Close()
+
 	header := make([]byte, len(mozLz4Header))
 	_, err = file.Read(header)
 	if err != nil {
